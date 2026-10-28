@@ -6,6 +6,8 @@ import 'package:flutter_application_12/home_cubit.dart';
 import 'package:flutter_application_12/home_screen.dart';
 import 'package:flutter_application_12/Login_screen.dart';
 
+//emai:bavlyromany@gmail.com
+//password: 123456
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
