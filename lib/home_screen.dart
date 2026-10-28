@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_application_12/home_cubit.dart';
 import 'package:flutter_application_12/Login_screen.dart';
+import 'package:flutter_application_12/create%24edit_todo.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -78,6 +79,96 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        todo.id,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      BlocConsumer<HomeCubit, HomeState>(
+                                        buildWhen: (previous, current) {
+                                          if (current is DeleteTodoLoading ||
+                                              current is DeleteTodoFailure ||
+                                              current is DeleteTodoSuccess) {
+                                            return true;
+                                          }
+                                          return false;
+                                        },
+                                        listener: (context, state) {
+                                          if (state is DeleteTodoFailure) {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: Text(
+                                                  "Error",
+                                                  style: TextStyle(
+                                                    fontSize: 24,
+                                                  ),
+                                                ),
+                                                content: Text(state.message),
+                                                actions: [
+                                                  ElevatedButton(
+                                                    style:
+                                                        ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              Colors.blueAccent,
+                                                        ),
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(
+                                                      "Ok",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }
+                                          if (state is DeleteTodoSuccess) {
+                                            context
+                                                .read<HomeCubit>()
+                                                .fetchTodos();
+                                          }
+                                        },
+                                        builder: (context, state) {
+                                          print(state);
+                                          if (state is DeleteTodoLoading) {
+                                            return CircularProgressIndicator(
+                                              color: Colors.white,
+                                            );
+                                          }
+
+                                          return GestureDetector(
+                                            onTap: () {
+                                              // cubit
+                                              context
+                                                  .read<HomeCubit>()
+                                                  .deleteTodo(todo.id);
+                                            },
+                                            child: Icon(
+                                              Icons.delete,
+                                              size: 34,
+                                              color: Colors.white,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 Text(
                                   todo.id,
                                   style: TextStyle(
@@ -113,15 +204,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                 ElevatedButton(
                                   onPressed: () {
-                                    var firestore = FirebaseFirestore.instance;
-                                    firestore
-                                        .collection('todos')
-                                        .doc(todo.id)
-                                        .update({
-                                          "title": "Dr.Mohamad",
-                                          "body": "Flutter Developer",
-                                          "createdAt": DateTime.now(),
-                                        });
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (context) => BlocProvider(
+                                        create: (context) => HomeCubit(),
+                                        child: CustomTodoCreation(
+                                          isEditing: true,
+                                          todo: todo,
+                                        ),
+                                      ),
+                                      isScrollControlled: true,
+                                    ).then((value) {
+                                      context.read<HomeCubit>().fetchTodos();
+                                    });
                                   },
                                   child: Text("Edit"),
                                 ),
@@ -203,16 +298,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     ElevatedButton(
                       onPressed: () async {
-                        var firestore = FirebaseFirestore.instance;
-
-                        var doc = firestore.collection("todos").doc();
-
-                        doc.set({
-                          "id": doc.id,
-                          "title": _titleController.text,
-                          "body": _bodyController.text,
-                          "createdAt": DateTime.now(),
-                        });
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (_) {
+                            return BlocProvider(
+                              create: (_) => HomeCubit(),
+                              child: CustomTodoCreation(),
+                            );
+                          },
+                        );
                       },
                       child: Text(
                         "Save Todo",
